@@ -3,14 +3,18 @@ import https from 'https';
 import geoip from 'geoip-lite';
 export default class Person 
 {
-  constructor(name, age, orientation, personality, desiredAge, desiredPersonality, location) {
+  constructor(name, age, orientation, personality,
+    desiredAge, desiredPersonality, location, pets, desiredPets) {
     this.name = name;
     this.age = age;
     this.locationPromise = location; 
     this.orientation = orientation; // sexual orientation
     this.personality = personality; // introvert, extrovert, both
+    this.pets = pets;
     this.desiredAge = desiredAge;
     this.desiredPersonality = desiredPersonality;
+    this.desiredPets = desiredPets;
+
   }  
 
   async getPersonLocation(){
@@ -96,8 +100,33 @@ class Matcher
 
 
     areMatched(person1, person2) {
-      // TODO
-      return true; 
+      const lowerBoundOne = person1.desiredAge - 3;
+      const upperBoundOne = person1.desiredAge + 3;
+      const lowerBoundTwo = person2.desiredAge - 3;
+      const upperBoundTwo = person2.desiredAge + 3;
+
+      let score = 0
+      if (person2.age >= lowerBoundOne && person2.age <= upperBoundOne) {
+        score += 2;
+      }
+      if (person1.age >= lowerBoundTwo && person1.age <= upperBoundTwo) {
+        score += 2;
+      }
+      if (person1.desiredPersonality == person2.personality) {
+        score += 2;
+      }
+      if (person2.desiredPersonality == person1.personality) {
+        score += 2;
+      }
+      if (person2.pets == person1.desiredPets) {
+        score += 1;
+      }
+      if (person1.pets == person2.desiredPets) {
+        score += 1
+      }
+
+      return score >= 6;
+      
     }
 
 }
@@ -105,15 +134,19 @@ class Matcher
 const matcher = new Matcher();
 
 // TESTS:
+// constructor for reference:
+//name, age, orientation, personality, desiredAge, desiredPersonality, 
+// location, pets, desiredPets
 
 // Vancouver
-const person1 = new Person('Jake', 15, "straight", "introvert", 20, "outrovert", "Vancouver")
-const person2 = new Person('Bob', 29, "bisexual", "introvert", 25, "introvert", "Vancouver")
-const person3 = new Person('Anne', 21, "straight", "introvert", 21, "introvert", "Vancouver")
+const person1 = new Person('Jake', 15, "straight", "introvert", 15, "outrovert", "Vancouver", "yes", "yes")
+const person2 = new Person('Bob', 15, "bisexual", "introvert", 15, "introvert", "Vancouver", "no", "yes")
+// Anne's in the right location but not much else is in the desired range:
+const person3 = new Person('Anne', 100, "straight", "introvert", 100, "introvert", "Vancouver", "no", "no" )
 
 // Edmonton
-const person4 = new Person('Allie', 20, "straight", "outrovert", 23, "outrovert", "Edmonton")
-const person5 = new Person('Cam', 22, "straight", "outrovert", 28, "introvert", "Edmonton")
+const person4 = new Person('Allie', 20, "straight", "outrovert", 23, "outrovert", "Edmonton", "yes", "yes")
+const person5 = new Person('Cam', 22, "straight", "outrovert", 28, "introvert", "Edmonton", "no", "yes")
 
 matcher.addPerson(person1);
 matcher.addPerson(person2);
