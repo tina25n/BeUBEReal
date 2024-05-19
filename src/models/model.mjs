@@ -3,7 +3,6 @@ import https from 'https';
 import geoip from 'geoip-lite';
 export default class Person 
 {
-  
   constructor(name, age, orientation, personality, desiredAge, desiredPersonality, location) {
     this.name = name;
     this.age = age;
@@ -12,7 +11,7 @@ export default class Person
     this.personality = personality; // introvert, extrovert, both
     this.desiredAge = desiredAge;
     this.desiredPersonality = desiredPersonality;
-  }
+  }  
 
   async getPersonLocation(){
     const location = await this.fetchPersonLocation(); 
@@ -45,11 +44,10 @@ export default class Person
 
 class Matcher 
 {
-
   constructor() {
     // Properties
-    this.locationPeopleDict = {} // key, value = location, list of people
-    this.matches = {} // key, value = person, list of similar people
+    this.locationPeopleDict = {}; // key, value = location, list of people
+    this.matches = new Map(); // key, value = person, list of similar people
   }
 
   addPerson(person) {
@@ -66,35 +64,36 @@ class Matcher
     //      - if not, create new key and add person there
     // Then call updateSimilaritiesField()
   updateSimilaritiesLocation(person) {
-    // const location = person.locationPromise.then(location => location);
-    const location = "Edmonton"
+    const location = person.locationPromise;
     if (location in this.locationPeopleDict) {
         this.locationPeopleDict[location].push(person);
     } else {
         this.locationPeopleDict[location] = new Array();
         this.locationPeopleDict[location].push(person); 
     }
-    this.updateSimilaritiesField();
+    this.updateSimilaritiesField(person);
   }
 
-    updateSimilaritiesField() {
-        for (const people_list of Object.values(this.locationPeopleDict)){
-            for (let i = 0; i < people_list.length; i++) { // i
-                for (let j = i + 1; j < people_list.length; j++) { // j = i + 1
-                  if (!this.matches[people_list[j]]) {
-                    this.matches[people_list[j]] = []; // Initialize if it doesn't exist
-                }
-                if (!this.matches[people_list[i]]) {
-                  this.matches[people_list[i]] = []; // Initialize if it doesn't exist
-                }
-                    if (this.areMatched(people_list[i], people_list[j])) {
-                        this.matches[people_list[i]].push(people_list[j]); // add to each other's respective match lists
-                        this.matches[people_list[j]].push(people_list[i]); 
-                    }
-                }
+  updateSimilaritiesField(newPerson) {
+    const people_list = this.locationPeopleDict[newPerson.locationPromise];
+    for (const existingPerson of people_list) {
+        if (existingPerson !== newPerson) {
+          // Instantiate matches list for both people if DNE
+            if (!this.matches.has(newPerson)) {
+                this.matches.set(newPerson, []);
+            }
+            if (!this.matches.has(existingPerson)) {
+                this.matches.set(existingPerson, []);
+            }
+            // Add to each other's matching list
+            if (this.areMatched(newPerson, existingPerson)) {
+                this.matches.get(newPerson).push(existingPerson);
+                this.matches.get(existingPerson).push(newPerson);
             }
         }
     }
+}
+
 
     areMatched(person1, person2) {
       // TODO
@@ -102,16 +101,31 @@ class Matcher
     }
 
 }
-// write the code below my comment 
+
 const matcher = new Matcher();
+
+// TESTS:
+
+// Vancouver
 const person1 = new Person('Jake', 15, "straight", "introvert", 20, "outrovert", "Vancouver")
-const person2 = new Person('Allie', 20, "straight", "outrovert", 23, "outrovert", "Edmonton")
+const person2 = new Person('Bob', 29, "bisexual", "introvert", 25, "introvert", "Vancouver")
+const person3 = new Person('Anne', 21, "straight", "introvert", 21, "introvert", "Vancouver")
+
+// Edmonton
+const person4 = new Person('Allie', 20, "straight", "outrovert", 23, "outrovert", "Edmonton")
+const person5 = new Person('Cam', 22, "straight", "outrovert", 28, "introvert", "Edmonton")
+
 matcher.addPerson(person1);
 matcher.addPerson(person2);
+matcher.addPerson(person3);
+matcher.addPerson(person4);
+matcher.addPerson(person5);
+
+
 // console.log(matcher.locationPeopleDict);
-console.log(matcher.matches);
-console.log("This is for person1: ", matcher.matches[person1]);
-console.log("This is for person2: ",  matcher.matches[person2]);
+console.log("Here are the matches: ", matcher.matches);
+// console.log("This is for person1: ", matcher.matches[person1]);
+// console.log("This is for person2: ",  matcher.matches[person2]);
 
   
 
